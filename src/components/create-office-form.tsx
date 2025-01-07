@@ -74,7 +74,11 @@ export function CreateOfficeForm() {
     //   ),
     // });
     try {
-      await createOfficeMutation.mutateAsync(data);
+      const transformedData = {
+        ...data,
+        responsibilities: data.responsibilities.map((r) => r.value),
+      };
+      await createOfficeMutation.mutateAsync(transformedData);
       // form.reset();
     } catch (error: unknown) {
       toast({
@@ -188,7 +192,8 @@ export function CreateOfficeForm() {
           </FormMessage>
         </div>
         <Button type="submit" className="w-full">
-          Create Office
+          {/* Create Office */}
+          {createOfficeMutation.isPending ? "Creating..." : "Create Office"}
         </Button>
       </form>
     </Form>

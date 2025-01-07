@@ -1,12 +1,12 @@
-export interface IResponsibility {
-  value: string;
-}
+// export interface IResponsibility {
+//   value: string;
+// }
 
 export interface ICreateOfficeDto {
   name: string;
   email: string;
   description: string;
-  responsibilities: IResponsibility[];
+  responsibilities: string[];
 }
 
 export interface IOffice extends ICreateOfficeDto {
