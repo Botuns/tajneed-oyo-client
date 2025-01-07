@@ -20,6 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 // import { toast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { useCreateOffice } from "@/hooks/useCreateOffice";
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -62,16 +63,25 @@ export function CreateOfficeForm() {
     name: "responsibilities",
     control: form.control,
   });
-
-  function onSubmit(data: FormValues) {
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
+  const createOfficeMutation = useCreateOffice();
+  async function onSubmit(data: FormValues) {
+    // toast({
+    //   title: "You submitted the following values:",
+    //   description: (
+    //     <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+    //       <code className="text-white">{JSON.stringify(data, null, 2)}</code>
+    //     </pre>
+    //   ),
+    // });
+    try {
+      await createOfficeMutation.mutateAsync(data);
+      form.reset();
+    } catch (error: unknown) {
+      toast({
+        title: "An error occurred",
+        description: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   return (
