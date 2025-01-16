@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 // import { toast } from "@/components/ui/use-toast"
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { useCreateOffice } from "@/hooks/useCreateOffice";
+import { useCreateOffice } from "@/hooks/office/mutations/useCreateOffice";
 
 const formSchema = z.object({
   name: z.string().min(2, {
