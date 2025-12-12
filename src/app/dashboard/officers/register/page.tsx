@@ -42,6 +42,7 @@ export default function OfficerRegistrationForm() {
       email: "",
       phone: "",
       offices: [],
+      fingerprint: "",
       userType: UserType.OFFICER,
       isAdmin: false,
       tenureStart: new Date(),

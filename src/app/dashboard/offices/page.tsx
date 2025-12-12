@@ -18,7 +18,7 @@ export default function OfficeDashboard() {
   // function to navigate to /create
   function navigateToCreateOffice() {
     // navigate to create office page
-    router.push("/create");
+    router.push("offices/create");
   }
   return (
     <div className="flex flex-col gap-6 p-6">

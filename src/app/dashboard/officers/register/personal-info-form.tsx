@@ -2,7 +2,7 @@ import { useFormContext } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Switch } from "@/components/ui/switch";
+// import { Switch } from "@/components/ui/switch";
 import { DatePicker } from "@/components/ui/date-picker";
 import { UserType } from "@/app/types/user";
 
@@ -10,10 +10,10 @@ export function PersonalInfoForm() {
   const {
     register,
     formState: { errors },
-    watch,
+    // watch,
     setValue,
   } = useFormContext();
-  const isAdmin = watch("isAdmin");
+  // const isAdmin = watch("isAdmin");
 
   return (
     <div className="space-y-6">
@@ -58,16 +58,20 @@ export function PersonalInfoForm() {
             <RadioGroupItem value={UserType.GUEST} id="supervisor" />
             <Label htmlFor="supervisor">Guest</Label>
           </div>
+          <div className="flex items-center space-x-2">
+            <RadioGroupItem value={UserType.OFFICER} id="officer" />
+            <Label htmlFor="officer">Officer</Label>
+          </div>
         </RadioGroup>
       </div>
-      <div className="flex items-center space-x-2">
+      {/* <div className="flex items-center space-x-2">
         <Switch
           id="isAdmin"
           checked={isAdmin}
           onCheckedChange={(checked: boolean) => setValue("isAdmin", checked)}
         />
         <Label htmlFor="isAdmin">Is Admin</Label>
-      </div>
+      </div> */}
       <div className="space-y-2">
         <Label>Tenure Start</Label>
         <DatePicker onChange={(date) => setValue("tenureStart", date)} />

@@ -6,7 +6,7 @@ export default function CreateOfficePage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Create New Office</h1>
         <p className="text-muted-foreground">
-          Set up a new office or department in your organization
+          Set up a new office or department in OYO ILAQA (Amila)
         </p>
       </div>
       <CreateOfficeForm />

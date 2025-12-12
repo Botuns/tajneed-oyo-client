@@ -1,76 +1,172 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Fingerprint, AlertCircle } from "lucide-react";
 
 export function BiometricForm() {
   const { setValue } = useFormContext();
-  const [capturedFingerprint, setCapturedFingerprint] = useState<string | null>(
-    null
-  );
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isSupported, setIsSupported] = useState(false);
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
 
+  // Check if biometric authentication is supported
   useEffect(() => {
-    if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#f0f0f0";
-        ctx.fillRect(0, 0, 300, 400);
+    const checkSupport = async () => {
+      try {
+        // Check if the browser supports WebAuthn
+        if (window.PublicKeyCredential) {
+          // Check if platform authenticator is available
+          const available =
+            await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          setIsSupported(available);
+        } else {
+          setIsSupported(false);
+        }
+      } catch (err) {
+        setIsSupported(false);
+        console.error("Error checking biometric support:", err);
       }
-    }
+    };
+
+    checkSupport();
   }, []);
 
-  const captureFingerprint = () => {
-    // Simulating fingerprint capture
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        // Clear previous drawing
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const enrollFingerprint = async () => {
+    try {
+      setStatus("enrolling");
+      setError("");
 
-        // Draw simulated fingerprint
-        ctx.beginPath();
-        for (let i = 0; i < 100; i++) {
-          const x = Math.random() * canvas.width;
-          const y = Math.random() * canvas.height;
-          ctx.moveTo(x, y);
-          ctx.arc(x, y, Math.random() * 2, 0, Math.PI * 2);
-        }
-        ctx.strokeStyle = "#333";
-        ctx.stroke();
+      // Generate a random challenge
+      const challenge = new Uint8Array(32);
+      crypto.getRandomValues(challenge);
 
-        // Convert canvas to base64 image
-        const fingerprintData = canvas.toDataURL("image/png");
-        setCapturedFingerprint(fingerprintData);
-        setValue("fingerprint", fingerprintData);
+      // Create credential options
+      const createCredentialOptions = {
+        publicKey: {
+          challenge,
+          rp: {
+            name: "Your App Name",
+            // id should match your domain
+            id: window.location.hostname,
+          },
+          user: {
+            id: new Uint8Array(16), // Generate unique user ID
+            name: "user@example.com", // This should come from your form
+            displayName: "User Name", // This should come from your form
+          },
+          pubKeyCredParams: [
+            {
+              type: "public-key",
+              alg: -7, // ES256
+            },
+          ],
+          authenticatorSelection: {
+            authenticatorAttachment: "platform",
+            requireResidentKey: false,
+            userVerification: "required",
+          },
+          timeout: 60000,
+          attestation: "direct",
+        },
+      };
+
+      // Create the credential
+      const credential = await navigator.credentials.create(
+        // @ts-expect-error
+        createCredentialOptions
+      );
+
+      if (credential) {
+        // Convert the credential to a format suitable for storage
+        const credentialId = btoa(
+          String.fromCharCode(...new Uint8Array(credential.rawId))
+        );
+
+        alert("Credential ID: " + credentialId);
+
+        // Store the credential ID
+        setValue("fingerprint", credentialId);
+        setStatus("success");
       }
+    } catch (err) {
+      console.error("Enrollment error:", err);
+      setError(getErrorMessage(err));
+      setStatus("error");
     }
   };
 
+  const getErrorMessage = (error) => {
+    alert(error.name);
+    if (error.name === "NotAllowedError") {
+      return "Biometric enrollment was denied. Please try again and accept the prompt.";
+    } else if (error.name === "NotSupportedError") {
+      return "Your device does not support biometric enrollment.";
+    }
+    return "Failed to enroll biometric. Please try again.";
+  };
+
+  if (!isSupported) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-xl font-semibold">Biometric Authentication</h2>
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Biometric authentication is not supported on this device. Please use
+            a device with fingerprint or Face ID capability.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold">Capture Fingerprint</h2>
-      <div className="space-y-2">
-        <Label>Fingerprint</Label>
-        <div className="border rounded-lg p-4 flex flex-col items-center">
-          <canvas
-            ref={canvasRef}
-            width={300}
-            height={400}
-            className="border mb-4"
+      <h2 className="text-xl font-semibold">Biometric Authentication</h2>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="space-y-4">
+        <Label>
+          Use your device&apos;s biometric sensor (fingerprint or Face ID) to
+          authenticate
+        </Label>
+
+        <div className="border rounded-lg p-6 flex flex-col items-center space-y-4">
+          <Fingerprint
+            size={64}
+            className={
+              status === "enrolling"
+                ? "animate-pulse text-primary"
+                : "text-gray-400"
+            }
           />
-          <Button onClick={captureFingerprint} type="button">
-            Capture Fingerprint
+
+          <Button
+            onClick={enrollFingerprint}
+            type="button"
+            disabled={status === "enrolling"}
+            className="w-full"
+          >
+            {status === "enrolling" ? "Verifying..." : "Enroll Biometric"}
           </Button>
         </div>
       </div>
-      {capturedFingerprint && (
-        <div className="mt-4">
-          <p className="text-green-600 font-semibold">
-            Fingerprint captured successfully!
-          </p>
-        </div>
+
+      {status === "success" && (
+        <Alert>
+          <Fingerprint className="h-4 w-4" />
+          <AlertDescription>
+            Biometric authentication successfully enrolled!
+          </AlertDescription>
+        </Alert>
       )}
     </div>
   );
