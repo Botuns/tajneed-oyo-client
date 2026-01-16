@@ -1,10 +1,11 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, MapPin } from "lucide-react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -33,13 +34,14 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { meetingService } from "@/app/services/meetings";
+import apiClient from "@/app/services/api-client";
 
-// This would typically come from your API
-const officers = [
-  { id: "1", name: "John Doe" },
-  { id: "2", name: "Jane Smith" },
-  { id: "3", name: "Bob Johnson" },
-];
+interface Officer {
+  _id: string;
+  name: string;
+  email?: string;
+}
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -66,12 +68,32 @@ const formSchema = z.object({
   expectedAttendees: z.array(z.string()).min(1, {
     message: "Please select at least one attendee.",
   }),
-  status: z.enum(["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED"], {
+  status: z.enum(["scheduled", "ongoing", "completed", "cancelled"], {
     required_error: "Please select a status.",
   }),
 });
 
 export function CreateMeetingForm() {
+  const router = useRouter();
+  const [officers, setOfficers] = useState<Officer[]>([]);
+  const [loadingOfficers, setLoadingOfficers] = useState(true);
+
+  // Fetch officers from API
+  useEffect(() => {
+    const fetchOfficers = async () => {
+      try {
+        const response = await apiClient.get<{ data: Officer[] }>("/officers");
+        setOfficers(response.data.data);
+      } catch (error) {
+        console.error("Failed to fetch officers:", error);
+      } finally {
+        setLoadingOfficers(false);
+      }
+    };
+
+    fetchOfficers();
+  }, []);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -84,8 +106,40 @@ export function CreateMeetingForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      // Combine date and time for startTime and endTime
+      const startTime = new Date(
+        values.date.getFullYear(),
+        values.date.getMonth(),
+        values.date.getDate(),
+        Number(values.startTime.split(":")[0]),
+        Number(values.startTime.split(":")[1])
+      ).toISOString();
+
+      const endTime = new Date(
+        values.date.getFullYear(),
+        values.date.getMonth(),
+        values.date.getDate(),
+        Number(values.endTime.split(":")[0]),
+        Number(values.endTime.split(":")[1])
+      ).toISOString();
+
+      await meetingService.create({
+        title: values.title,
+        description: values.description,
+        date: values.date.toISOString(),
+        startTime,
+        endTime,
+        location: values.location,
+        organizer: values.organizer,
+        expectedAttendees: values.expectedAttendees,
+        status: values.status,
+      });
+      router.push("/dashboard/meetings");
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   return (
@@ -224,15 +278,20 @@ export function CreateMeetingForm() {
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
+                    disabled={loadingOfficers}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select organizer" />
+                        <SelectValue
+                          placeholder={
+                            loadingOfficers ? "Loading..." : "Select organizer"
+                          }
+                        />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {officers.map((officer) => (
-                        <SelectItem key={officer.id} value={officer.id}>
+                        <SelectItem key={officer._id} value={officer._id}>
                           {officer.name}
                         </SelectItem>
                       ))}
@@ -261,46 +320,70 @@ export function CreateMeetingForm() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="SCHEDULED">Scheduled</SelectItem>
-                      <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="ongoing">Ongoing</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {/* <FormField
+            <FormField
               control={form.control}
               name="expectedAttendees"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
                   <FormLabel>Expected Attendees</FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      const currentValues = new Set(field.value);
-                      if (currentValues.has(value)) {
-                        currentValues.delete(value);
-                      } else {
-                        currentValues.add(value);
-                      }
-                      field.onChange(Array.from(currentValues));
-                    }}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select attendees" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {officers.map((officer) => (
-                        <SelectItem key={officer.id} value={officer.id}>
-                          {officer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormDescription>
+                    Select all officers expected to attend this meeting
+                  </FormDescription>
+                  <div className="grid gap-3 rounded-lg border p-4 max-h-60 overflow-y-auto">
+                    {loadingOfficers ? (
+                      <div className="text-sm text-muted-foreground">
+                        Loading officers...
+                      </div>
+                    ) : officers.length === 0 ? (
+                      <div className="text-sm text-muted-foreground">
+                        No officers available
+                      </div>
+                    ) : (
+                      officers.map((officer) => (
+                        <div
+                          key={officer._id}
+                          className="flex items-center space-x-2"
+                        >
+                          <input
+                            type="checkbox"
+                            id={officer._id}
+                            checked={field.value?.includes(officer._id)}
+                            onChange={(e) => {
+                              const currentValues = new Set(field.value || []);
+                              if (e.target.checked) {
+                                currentValues.add(officer._id);
+                              } else {
+                                currentValues.delete(officer._id);
+                              }
+                              field.onChange(Array.from(currentValues));
+                            }}
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                          />
+                          <label
+                            htmlFor={officer._id}
+                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                          >
+                            {officer.name}
+                            {officer.email && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                ({officer.email})
+                              </span>
+                            )}
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
                   <FormDescription>
                     {field.value?.length
                       ? `${field.value.length} attendee${
@@ -311,14 +394,16 @@ export function CreateMeetingForm() {
                   <FormMessage />
                 </FormItem>
               )}
-            /> */}
+            />
           </div>
         </div>
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel
           </Button>
-          <Button type="submit">Create Meeting</Button>
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? "Creating..." : "Create Meeting"}
+          </Button>
         </div>
       </form>
     </Form>
