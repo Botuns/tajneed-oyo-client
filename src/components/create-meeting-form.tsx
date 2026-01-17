@@ -39,7 +39,9 @@ import apiClient from "@/app/services/api-client";
 
 interface Officer {
   _id: string;
-  name: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
   email?: string;
 }
 
@@ -93,6 +95,13 @@ export function CreateMeetingForm() {
 
     fetchOfficers();
   }, []);
+
+  const getOfficerName = (officer: Officer): string => {
+    if (officer.firstName && officer.lastName) {
+      return `${officer.firstName} ${officer.lastName}`;
+    }
+    return officer.name || officer.email || "Unknown";
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -292,7 +301,7 @@ export function CreateMeetingForm() {
                     <SelectContent>
                       {officers.map((officer) => (
                         <SelectItem key={officer._id} value={officer._id}>
-                          {officer.name}
+                          {getOfficerName(officer)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -373,7 +382,7 @@ export function CreateMeetingForm() {
                             htmlFor={officer._id}
                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                           >
-                            {officer.name}
+                            {getOfficerName(officer)}
                             {officer.email && (
                               <span className="ml-2 text-xs text-muted-foreground">
                                 ({officer.email})
@@ -386,9 +395,8 @@ export function CreateMeetingForm() {
                   </div>
                   <FormDescription>
                     {field.value?.length
-                      ? `${field.value.length} attendee${
-                          field.value.length === 1 ? "" : "s"
-                        } selected`
+                      ? `${field.value.length} attendee${field.value.length === 1 ? "" : "s"
+                      } selected`
                       : "No attendees selected"}
                   </FormDescription>
                   <FormMessage />

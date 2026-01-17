@@ -1,44 +1,50 @@
-// app/types/meeting.ts
 export interface ICreateMeetingDto {
   title: string;
+  description: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime: string;
   location: string;
   organizer: string;
-  attendees?: number;
-  description?: string;
-  status?: "scheduled" | "ongoing" | "completed" | "cancelled";
+  expectedAttendees?: string[];
+  status?: MeetingStatus;
 }
 
 export interface IUpdateMeetingDto {
   title?: string;
+  description?: string;
   date?: string;
-  time?: string;
+  startTime?: string;
+  endTime?: string;
   location?: string;
   organizer?: string;
-  attendees?: number;
-  description?: string;
-  status?: "scheduled" | "ongoing" | "completed" | "cancelled";
+  expectedAttendees?: string[];
+  status?: MeetingStatus;
 }
+
+export type MeetingStatus = "scheduled" | "ongoing" | "completed" | "cancelled";
 
 export interface IMeeting {
   id: string;
   title: string;
+  description?: string;
   date: string;
+  startTime?: string;
+  endTime?: string;
   time: string;
   location: string;
   attendees: number;
   organizer: string;
-  status: "scheduled" | "ongoing" | "completed" | "cancelled";
-  description?: string;
+  expectedAttendees?: string[];
+  status: MeetingStatus;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface MeetingFilters {
-  page: number;
-  limit: number;
-  status?: "scheduled" | "ongoing" | "completed" | "cancelled";
+  page?: number;
+  limit?: number;
+  status?: MeetingStatus;
   search?: string;
   startDate?: string;
   endDate?: string;

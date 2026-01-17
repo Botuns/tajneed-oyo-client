@@ -74,14 +74,15 @@ export function BiometricForm() {
 
       // Create the credential
       const credential = await navigator.credentials.create(
-        // @ts-expect-error
+        // @ts-expect-error - WebAuthn CredentialCreationOptions type mismatch with publicKey
         createCredentialOptions
       );
 
       if (credential) {
         // Convert the credential to a format suitable for storage
+        const pkCredential = credential as PublicKeyCredential;
         const credentialId = btoa(
-          String.fromCharCode(...new Uint8Array(credential.rawId))
+          String.fromCharCode(...new Uint8Array(pkCredential.rawId))
         );
 
         alert("Credential ID: " + credentialId);
@@ -92,12 +93,12 @@ export function BiometricForm() {
       }
     } catch (err) {
       console.error("Enrollment error:", err);
-      setError(getErrorMessage(err));
+      setError(getErrorMessage(err as Error));
       setStatus("error");
     }
   };
 
-  const getErrorMessage = (error) => {
+  const getErrorMessage = (error: Error) => {
     alert(error.name);
     if (error.name === "NotAllowedError") {
       return "Biometric enrollment was denied. Please try again and accept the prompt.";
