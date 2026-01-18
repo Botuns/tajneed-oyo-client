@@ -6,48 +6,44 @@ import { usePathname } from "next/navigation";
 import {
   Building2,
   CalendarCheck,
-  ChevronDown,
+  HelpCircle,
   LayoutDashboard,
   LogOut,
+  Search,
   Settings,
   Users,
   Users2,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
-  SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
 
 const navigation = [
   {
-    title: "Main",
+    label: "Main",
     items: [
       { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { title: "Meetings", href: "/dashboard/meetings", icon: CalendarCheck },
     ],
   },
   {
-    title: "Organization",
+    label: "Organization",
     items: [
       { title: "Offices", href: "/dashboard/offices", icon: Building2 },
       { title: "Departments", href: "/dashboard/departments", icon: Users2 },
     ],
   },
   {
-    title: "Management",
+    label: "Management",
     items: [
       { title: "Check In Officer", href: "/dashboard/check-in", icon: Users },
       { title: "Tajneed", href: "/dashboard/tajneed", icon: Users },
@@ -56,48 +52,34 @@ const navigation = [
   },
 ];
 
-interface NavGroupProps {
-  group: {
+const footerItems = [
+  { title: "Get Help", href: "/help", icon: HelpCircle },
+  { title: "Settings", href: "/dashboard/settings", icon: Settings },
+];
+
+interface NavItemProps {
+  item: {
     title: string;
-    items: {
-      title: string;
-      href: string;
-      icon: React.ComponentType<{ className?: string }>;
-    }[];
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
   };
-  pathname: string;
+  isActive: boolean;
 }
 
-function NavGroup({ group, pathname }: NavGroupProps) {
-  const [isOpen, setIsOpen] = React.useState(true);
-
+function NavItem({ item, isActive }: NavItemProps) {
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-muted/50">
-        <span className="text-sm font-medium">{group.title}</span>
-        <ChevronDown
-          className={`size-4 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </CollapsibleTrigger>
-      <CollapsibleContent>
-        {group.items.map((item) => (
-          <SidebarMenuItem key={item.href}>
-            <SidebarMenuButton
-              asChild
-              isActive={pathname === item.href}
-              tooltip={item.title}
-            >
-              <Link href={item.href}>
-                <item.icon className="size-4" />
-                <span>{item.title}</span>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
-      </CollapsibleContent>
-    </Collapsible>
+    <Link
+      href={item.href}
+      className={cn(
+        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
+        isActive
+          ? "bg-primary/10 text-primary"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      )}
+    >
+      <item.icon className="size-[18px]" strokeWidth={1.5} />
+      <span>{item.title}</span>
+    </Link>
   );
 }
 
@@ -105,38 +87,74 @@ export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b p-4">
-        <div className="flex items-center gap-2">
-          <div className="size-8 rounded-full bg-primary" />
-          <div className="flex flex-col">
-            <h2 className="text-sm font-semibold">Organization Name</h2>
-            <p className="text-xs text-muted-foreground">Attendance System</p>
+    <Sidebar className="border-r border-border bg-card">
+      <SidebarHeader className="p-4">
+        {/* Logo */}
+        <div className="flex items-center gap-3">
+          <div className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <LayoutDashboard className="size-5" strokeWidth={1.5} />
           </div>
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              Organization Name
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              Attendance System
+            </p>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="relative mt-4">
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            className="h-9 bg-muted pl-9 text-sm"
+          />
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="py-2 px-6">
-        <SidebarMenu>
+      <SidebarContent className="px-3 py-2">
+        <SidebarMenu className="space-y-6">
           {navigation.map((group) => (
-            <NavGroup key={group.title} group={group} pathname={pathname} />
+            <div key={group.label}>
+              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.label}
+              </p>
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.href}>
+                    <NavItem
+                      item={item}
+                      isActive={pathname === item.href}
+                    />
+                  </SidebarMenuItem>
+                ))}
+              </div>
+            </div>
           ))}
         </SidebarMenu>
       </SidebarContent>
 
-      <SidebarFooter className="border-t p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-2"
-              size="sm"
-            >
-              <LogOut className="size-4" />
-              <span>Log out</span>
-            </Button>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="border-t border-border p-3">
+        <div className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Others
+        </div>
+        <div className="space-y-1">
+          {footerItems.map((item) => (
+            <NavItem
+              key={item.href}
+              item={item}
+              isActive={pathname === item.href}
+            />
+          ))}
+        </div>
+        <div className="mt-4 border-t border-border pt-3">
+          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground">
+            <LogOut className="size-[18px]" strokeWidth={1.5} />
+            <span>Logout</span>
+          </button>
+        </div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>
