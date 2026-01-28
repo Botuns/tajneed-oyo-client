@@ -13,6 +13,7 @@ import {
   Settings,
   Users,
   Users2,
+  type LucideProps,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -39,7 +40,7 @@ const navigation = [
     label: "Organization",
     items: [
       { title: "Offices", href: "/dashboard/offices", icon: Building2 },
-      { title: "Departments", href: "/dashboard/departments", icon: Users2 },
+      { title: "Officers", href: "/dashboard/departments", icon: Users2 },
     ],
   },
   {
@@ -61,7 +62,7 @@ interface NavItemProps {
   item: {
     title: string;
     href: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: React.ComponentType<LucideProps>;
   };
   isActive: boolean;
 }

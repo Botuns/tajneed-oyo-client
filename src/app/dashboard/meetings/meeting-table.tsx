@@ -12,10 +12,11 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMeetings } from "@/hooks/meetings/queries/useMeetings";
 import { IMeeting, MeetingStatus } from "@/app/types/meetings";
 import { officerService } from "@/app/services/officer";
+import { meetingService } from "@/app/services/meetings";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,6 +26,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<MeetingStatus, string> = {
@@ -36,13 +47,26 @@ const STATUS_STYLES: Record<MeetingStatus, string> = {
 
 export function MeetingTable() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data, isLoading } = useMeetings({ page: 1, limit: 10 });
   const meetings = data?.data ?? [];
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [meetingToDelete, setMeetingToDelete] = React.useState<IMeeting | null>(null);
 
   const { data: officers = [] } = useQuery({
     queryKey: ["officers"],
     queryFn: () => officerService.getAll(),
     staleTime: 60000,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => meetingService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      setDeleteDialogOpen(false);
+      setMeetingToDelete(null);
+    },
   });
 
   const getOrganizerName = React.useCallback(
@@ -99,8 +123,15 @@ export function MeetingTable() {
     router.push(`/dashboard/meetings/${id}/edit`);
   };
 
-  const handleDelete = (id: string) => {
-    console.log("Delete meeting:", id);
+  const handleDeleteClick = (meeting: IMeeting) => {
+    setMeetingToDelete(meeting);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (meetingToDelete) {
+      deleteMutation.mutate(meetingToDelete.id);
+    }
   };
 
   if (isLoading) {
@@ -134,89 +165,113 @@ export function MeetingTable() {
   }
 
   return (
-    <div className="divide-y divide-border">
-      {meetings.map((meeting: IMeeting) => (
-        <div
-          key={meeting.id}
-          className="flex items-start gap-4 p-4 transition-colors duration-150 hover:bg-muted/50"
-        >
-          {/* Date Badge */}
-          <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
-            <span className="text-[10px] font-medium uppercase text-muted-foreground">
-              {meeting.date ? format(new Date(meeting.date), "MMM") : "N/A"}
-            </span>
-            <span className="text-lg font-bold leading-none text-foreground">
-              {meeting.date ? format(new Date(meeting.date), "dd") : "--"}
-            </span>
-          </div>
+    <>
+      <div className="divide-y divide-border">
+        {meetings.map((meeting: IMeeting) => (
+          <div
+            key={meeting.id}
+            className="flex items-start gap-4 p-4 transition-colors duration-150 hover:bg-muted/50"
+          >
+            {/* Date Badge */}
+            <div className="flex size-12 shrink-0 flex-col items-center justify-center rounded-lg bg-muted">
+              <span className="text-[10px] font-medium uppercase text-muted-foreground">
+                {meeting.date ? format(new Date(meeting.date), "MMM") : "N/A"}
+              </span>
+              <span className="text-lg font-bold leading-none text-foreground">
+                {meeting.date ? format(new Date(meeting.date), "dd") : "--"}
+              </span>
+            </div>
 
-          {/* Meeting Details */}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h4 className="truncate text-sm font-medium text-foreground">
-                  {meeting.title}
-                </h4>
-                <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <MapPin className="size-3" />
-                    {meeting.location || "No location"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Users className="size-3" />
-                    {meeting.expectedAttendees?.length || meeting.attendees || 0} attendees
-                  </span>
-                  <span>Organizer: {getOrganizerName(meeting.organizer)}</span>
+            {/* Meeting Details */}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <h4 className="truncate text-sm font-medium text-foreground">
+                    {meeting.title}
+                  </h4>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <MapPin className="size-3" />
+                      {meeting.location || "No location"}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Users className="size-3" />
+                      {meeting.expectedAttendees?.length || meeting.attendees || 0} attendees
+                    </span>
+                    <span>Organizer: {getOrganizerName(meeting.organizer)}</span>
+                  </div>
                 </div>
-              </div>
 
-              {/* Time & Status */}
-              <div className="flex shrink-0 items-center gap-3">
-                <div className="text-right">
-                  <p className="text-xs font-medium text-foreground">
-                    {formatMeetingTime(meeting)}
-                  </p>
+                {/* Time & Status */}
+                <div className="flex shrink-0 items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs font-medium text-foreground">
+                      {formatMeetingTime(meeting)}
+                    </p>
+                  </div>
+                  <span
+                    className={cn(
+                      "rounded px-2 py-0.5 text-[10px] font-medium capitalize",
+                      STATUS_STYLES[getEffectiveStatus(meeting)]
+                    )}
+                  >
+                    {getEffectiveStatus(meeting)}
+                  </span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="size-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handleView(meeting.id)}>
+                        <Eye className="mr-2 size-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleEdit(meeting.id)}>
+                        <Edit className="mr-2 size-4" />
+                        Edit Meeting
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteClick(meeting)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="mr-2 size-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-                <span
-                  className={cn(
-                    "rounded px-2 py-0.5 text-[10px] font-medium capitalize",
-                    STATUS_STYLES[getEffectiveStatus(meeting)]
-                  )}
-                >
-                  {getEffectiveStatus(meeting)}
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="size-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => handleView(meeting.id)}>
-                      <Eye className="mr-2 size-4" />
-                      View Details
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleEdit(meeting.id)}>
-                      <Edit className="mr-2 size-4" />
-                      Edit Meeting
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => handleDelete(meeting.id)}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="mr-2 size-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete meeting?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the
+              meeting &ldquo;{meetingToDelete?.title}&rdquo; and all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
