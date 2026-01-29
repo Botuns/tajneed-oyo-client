@@ -1,7 +1,3 @@
-// export interface IResponsibility {
-//   value: string;
-// }
-
 export interface ICreateOfficeDto {
   name: string;
   email: string;
@@ -9,14 +5,9 @@ export interface ICreateOfficeDto {
   responsibilities: string[];
 }
 
-export interface IOffice extends ICreateOfficeDto {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface IOffice {
   _id: string;
+  id?: string;
   name: string;
   email: string;
   description: string;
@@ -26,13 +17,6 @@ export interface IOffice {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface ICreateOfficeDto {
-  name: string;
-  email: string;
-  description: string;
-  responsibilities: string[];
 }
 
 export interface OfficeFilters {

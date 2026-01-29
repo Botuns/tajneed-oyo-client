@@ -20,9 +20,10 @@ export default function MeetingDashboard() {
 
   const stats = React.useMemo(() => {
     const now = new Date();
-    const scheduled = meetings.filter((m) => m.status === "scheduled").length;
-    const ongoing = meetings.filter((m) => m.status === "ongoing").length;
-    const completed = meetings.filter((m) => m.status === "completed").length;
+    const normalizeStatus = (s: string) => s.toLowerCase();
+    const scheduled = meetings.filter((m) => normalizeStatus(m.status) === "scheduled").length;
+    const ongoing = meetings.filter((m) => normalizeStatus(m.status) === "ongoing").length;
+    const completed = meetings.filter((m) => normalizeStatus(m.status) === "completed").length;
     const upcoming = meetings.filter((m) => new Date(m.date) > now).length;
     const totalAttendees = meetings.reduce(
       (acc, m) => acc + (m.expectedAttendees?.length || m.attendees || 0),

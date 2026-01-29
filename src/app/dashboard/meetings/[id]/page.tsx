@@ -34,11 +34,15 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-const STATUS_STYLES = {
+const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }> = {
     scheduled: { bg: "bg-blue-50", text: "text-blue-700", label: "Scheduled" },
+    SCHEDULED: { bg: "bg-blue-50", text: "text-blue-700", label: "Scheduled" },
     ongoing: { bg: "bg-primary/10", text: "text-primary", label: "Ongoing" },
+    ONGOING: { bg: "bg-primary/10", text: "text-primary", label: "Ongoing" },
     completed: { bg: "bg-muted", text: "text-muted-foreground", label: "Completed" },
+    COMPLETED: { bg: "bg-muted", text: "text-muted-foreground", label: "Completed" },
     cancelled: { bg: "bg-destructive/10", text: "text-destructive", label: "Cancelled" },
+    CANCELLED: { bg: "bg-destructive/10", text: "text-destructive", label: "Cancelled" },
 };
 
 function InfoCard({
@@ -246,7 +250,7 @@ export default function MeetingDetailPage() {
                 />
             </div>
 
-            {/* Expected Attendees */}
+            {/* Attendance Overview */}
             <div className="rounded-xl border border-border bg-card">
                 <div className="flex items-center justify-between border-b border-border p-5">
                     <div className="flex items-center gap-3">
@@ -254,42 +258,64 @@ export default function MeetingDetailPage() {
                             <Users className="size-4 text-muted-foreground" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-semibold">Expected Attendees</h3>
+                            <h3 className="text-sm font-semibold">Attendance</h3>
                             <p className="text-xs text-muted-foreground">
-                                {meeting.expectedAttendees?.length || 0} officers expected
+                                {meeting.totalCheckedIn || 0} of {meeting.expectedAttendees?.length || 0} checked in
                             </p>
                         </div>
                     </div>
                 </div>
                 <div className="divide-y divide-border">
                     {meeting.expectedAttendees && meeting.expectedAttendees.length > 0 ? (
-                        meeting.expectedAttendees.map((attendeeId: string) => (
-                            <div
-                                key={attendeeId}
-                                className="flex items-center justify-between p-4"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <div className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                                        {getInitials(attendeeId)}
+                        meeting.expectedAttendees.map((attendeeId: string) => {
+                            const checkedIn = meeting.checkedInOfficers?.find(
+                                (o) => o.id === attendeeId
+                            );
+                            return (
+                                <div
+                                    key={attendeeId}
+                                    className="flex items-center justify-between p-4"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            className={cn(
+                                                "flex size-9 items-center justify-center rounded-full text-xs font-medium",
+                                                checkedIn
+                                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                                    : "bg-primary/10 text-primary"
+                                            )}
+                                        >
+                                            {checkedIn ? (
+                                                <CheckCircle className="size-4" />
+                                            ) : (
+                                                getInitials(attendeeId)
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-medium">
+                                                {checkedIn?.name || getOfficerName(attendeeId)}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {checkedIn?.email || getOfficerEmail(attendeeId)}
+                                            </p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-medium">
-                                            {getOfficerName(attendeeId)}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {getOfficerEmail(attendeeId)}
-                                        </p>
+                                    <div className="flex items-center gap-2">
+                                        {checkedIn ? (
+                                            <span className="flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                <CheckCircle className="size-3" />
+                                                Checked In
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
+                                                <AlertCircle className="size-3" />
+                                                Pending
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {/* Placeholder for attendance status - would come from attendance API */}
-                                    <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                                        <AlertCircle className="size-3" />
-                                        Pending
-                                    </span>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <div className="p-8 text-center text-sm text-muted-foreground">
                             No attendees assigned to this meeting

@@ -38,12 +38,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 
-const STATUS_STYLES: Record<MeetingStatus, string> = {
+const STATUS_STYLES: Record<string, string> = {
   scheduled: "bg-blue-50 text-blue-700",
+  SCHEDULED: "bg-blue-50 text-blue-700",
   ongoing: "bg-primary/10 text-primary",
+  ONGOING: "bg-primary/10 text-primary",
   completed: "bg-muted text-muted-foreground",
+  COMPLETED: "bg-muted text-muted-foreground",
   cancelled: "bg-destructive/10 text-destructive",
+  CANCELLED: "bg-destructive/10 text-destructive",
 };
+
+function normalizeStatus(status: string): string {
+  return status.toLowerCase();
+}
 
 export function MeetingTable() {
   const router = useRouter();
@@ -85,16 +93,17 @@ export function MeetingTable() {
     [officers]
   );
 
-  const getEffectiveStatus = (meeting: IMeeting): MeetingStatus => {
+  const getEffectiveStatus = (meeting: IMeeting): string => {
     const now = new Date();
     const meetingDate = new Date(meeting.date);
+    const normalizedStatus = normalizeStatus(meeting.status);
     if (
-      (meeting.status === "scheduled" || meeting.status === "ongoing") &&
+      (normalizedStatus === "scheduled" || normalizedStatus === "ongoing") &&
       meetingDate < now
     ) {
       return "completed";
     }
-    return meeting.status;
+    return normalizedStatus;
   };
 
   const formatMeetingTime = (meeting: IMeeting): string => {

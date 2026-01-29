@@ -22,10 +22,25 @@ export interface IUpdateMeetingDto {
   status?: MeetingStatus;
 }
 
-export type MeetingStatus = "scheduled" | "ongoing" | "completed" | "cancelled";
+export type MeetingStatus =
+  | "scheduled"
+  | "ongoing"
+  | "completed"
+  | "cancelled"
+  | "SCHEDULED"
+  | "ONGOING"
+  | "COMPLETED"
+  | "CANCELLED";
+
+export interface CheckedInOfficer {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export interface IMeeting {
   id: string;
+  _id?: string;
   title: string;
   description?: string;
   date: string;
@@ -39,6 +54,8 @@ export interface IMeeting {
   status: MeetingStatus;
   createdAt: string;
   updatedAt: string;
+  checkedInOfficers?: CheckedInOfficer[];
+  totalCheckedIn?: number;
 }
 
 export interface MeetingFilters {

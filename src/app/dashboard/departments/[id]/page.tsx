@@ -86,7 +86,7 @@ export default function OfficerDetailPage() {
     });
 
     const getOfficeName = (id: string) => {
-        const office = offices.find((o) => o._id === id);
+        const office = offices.find((o) => o._id === id || o.id === id);
         return office?.name || id;
     };
 
