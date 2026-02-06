@@ -1,17 +1,11 @@
 "use client";
 
 import * as React from "react";
-import {
-  CalendarDays,
-  Clock,
-  Package,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { CalendarDays, Clock, Package, TrendingUp, Users } from "lucide-react";
 import {
   useDashboardStats,
   useUpcomingMeetings,
-  useAbsenceAlerts,
+  // useAbsenceAlerts,
   useMeetingAttendance,
 } from "@/hooks/dashboard/use-dashboard";
 import {
@@ -22,15 +16,15 @@ import {
   AttendanceChartSkeleton,
   UpcomingMeetings,
   RecentAttendance,
-  AbsenceAlerts,
+  // AbsenceAlerts,
 } from "@/components/dashboard";
 
 export default function DashboardPage() {
   const { data: stats, isLoading: statsLoading } = useDashboardStats();
   const { data: meetings = [], isLoading: meetingsLoading } =
     useUpcomingMeetings(5);
-  const { data: absences = [], isLoading: absencesLoading } =
-    useAbsenceAlerts();
+  // const { data: absences = [], isLoading: absencesLoading } =
+  //   useAbsenceAlerts();
 
   const activeMeetingId = React.useMemo(() => {
     const ongoing = meetings.find((m) => m.status === "ongoing");
@@ -124,16 +118,12 @@ export default function DashboardPage() {
       </div>
 
       {/* Absence Alerts */}
-      <AbsenceAlerts absences={absences} isLoading={absencesLoading} />
+      {/* <AbsenceAlerts absences={absences} isLoading={absencesLoading} /> */}
 
       {/* Two Column Layout */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left Column - Chart */}
-        {statsLoading ? (
-          <AttendanceChartSkeleton />
-        ) : (
-          <AttendanceChart />
-        )}
+        {statsLoading ? <AttendanceChartSkeleton /> : <AttendanceChart />}
 
         {/* Right Column - Upcoming Meetings */}
         <UpcomingMeetings meetings={meetings} isLoading={meetingsLoading} />
