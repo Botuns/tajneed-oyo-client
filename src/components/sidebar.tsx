@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Building2,
   CalendarCheck,
@@ -75,7 +76,7 @@ function NavItem({ item, isActive }: NavItemProps) {
         "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors duration-150",
         isActive
           ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground",
       )}
     >
       <item.icon className="size-[18px]" strokeWidth={1.5} />
@@ -86,6 +87,8 @@ function NavItem({ item, isActive }: NavItemProps) {
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { logout } = useAuth();
 
   return (
     <Sidebar className="border-r border-border bg-card">
@@ -125,10 +128,7 @@ export function DashboardSidebar() {
               <div className="space-y-1">
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.href}>
-                    <NavItem
-                      item={item}
-                      isActive={pathname === item.href}
-                    />
+                    <NavItem item={item} isActive={pathname === item.href} />
                   </SidebarMenuItem>
                 ))}
               </div>
@@ -151,7 +151,13 @@ export function DashboardSidebar() {
           ))}
         </div>
         <div className="mt-4 border-t border-border pt-3">
-          <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground">
+          <button
+            onClick={() => {
+              logout();
+              router.replace("/");
+            }}
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors duration-150 hover:bg-muted hover:text-foreground"
+          >
             <LogOut className="size-[18px]" strokeWidth={1.5} />
             <span>Logout</span>
           </button>

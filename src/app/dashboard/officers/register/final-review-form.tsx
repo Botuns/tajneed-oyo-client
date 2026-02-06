@@ -8,7 +8,7 @@ export function FinalReviewForm() {
 
   const offices = officesData?.data || [];
   const selectedOffices = offices.filter((office) =>
-    formData.offices.includes(office._id)
+    formData.offices.includes(office._id),
   );
 
   return (
@@ -20,6 +20,9 @@ export function FinalReviewForm() {
           <p>Name: {formData.name}</p>
           <p>Email: {formData.email}</p>
           <p>Phone: {formData.phone}</p>
+          <p>Position: {formData.position}</p>
+          <p>Position Type: {formData.positionType}</p>
+          <p>Dila: {formData.dila}</p>
           <p>User Type: {formData.userType}</p>
           <p>Is Admin: {formData.isAdmin ? "Yes" : "No"}</p>
           <p>Tenure Start: {formData.tenureStart.toDateString()}</p>

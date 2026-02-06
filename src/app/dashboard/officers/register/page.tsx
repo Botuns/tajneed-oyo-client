@@ -14,11 +14,15 @@ import { generateUniqueCode } from "@/app/utils/unique-code";
 import { useCreateOfficer } from "@/hooks/officer/mutations/useCreateOfficer";
 import { ICreateOfficerDto } from "@/app/types/officer";
 import { UserType } from "@/app/types/user";
+import { PositionType } from "@/app/types/officer";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone number must be at least 10 digits"),
+  position: z.string().min(2, "Position title is required"),
+  positionType: z.nativeEnum(PositionType),
+  dila: z.string().min(2, "Dila (local jamaat) is required"),
   offices: z.array(z.string()).min(1, "Select at least one office"),
   userType: z.nativeEnum(UserType),
   isAdmin: z.boolean(),
@@ -41,6 +45,9 @@ export default function OfficerRegistrationForm() {
       name: "",
       email: "",
       phone: "",
+      position: "",
+      positionType: PositionType.HEAD,
+      dila: "",
       offices: [],
       fingerprint: "",
       userType: UserType.OFFICER,
@@ -53,7 +60,21 @@ export default function OfficerRegistrationForm() {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      await createOfficer.mutateAsync(data as ICreateOfficerDto);
+      const nameParts = data.name.split(" ");
+      const dto: ICreateOfficerDto = {
+        firstName: nameParts[0] || "",
+        lastName: nameParts.slice(1).join(" ") || "",
+        email: data.email,
+        phoneNumber: data.phone,
+        position: data.position,
+        positionType: data.positionType,
+        dila: data.dila,
+        tenureStart: data.tenureStart.toISOString(),
+        tenureEnd: data.tenureEnd?.toISOString(),
+        offices: data.offices,
+        isAdmin: data.isAdmin,
+      };
+      await createOfficer.mutateAsync(dto);
       // Handle success (e.g., show success message, redirect)
     } catch (error: unknown) {
       if (error instanceof Error) {

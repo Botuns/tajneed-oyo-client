@@ -13,7 +13,7 @@ export function useCreateOfficer() {
       queryClient.invalidateQueries({ queryKey: ["officers"] });
       toast({
         title: "Officer created",
-        description: `${data.name} has been successfully added.`,
+        description: `${data.firstName} ${data.lastName} has been successfully added.`,
         variant: "default",
       });
     },
