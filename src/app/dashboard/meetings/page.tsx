@@ -16,7 +16,7 @@ import { useMeetings } from "@/hooks/meetings/queries/useMeetings";
 
 export default function MeetingDashboard() {
   const { data } = useMeetings({ page: 1, limit: 100 });
-  const meetings = data?.data ?? [];
+  const meetings = React.useMemo(() => data?.data ?? [], [data]);
 
   const stats = React.useMemo(() => {
     const now = new Date();

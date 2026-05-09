@@ -460,9 +460,8 @@ export function EditOfficerForm({ officer }: { officer: IOfficer }) {
                         checked={field.value?.includes(office._id)}
                         onCheckedChange={(checked) => {
                           const vals = new Set(field.value || []);
-                          checked
-                            ? vals.add(office._id)
-                            : vals.delete(office._id);
+                          if (checked) vals.add(office._id);
+                          else vals.delete(office._id);
                           field.onChange(Array.from(vals));
                         }}
                       />

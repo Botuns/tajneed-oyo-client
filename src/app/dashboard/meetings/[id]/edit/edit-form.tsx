@@ -23,7 +23,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
     Form,
     FormControl,
-    FormDescription,
     FormField,
     FormItem,
     FormLabel,
@@ -141,11 +140,6 @@ export function EditMeetingForm({ meeting }: EditMeetingFormProps) {
         return officer.name?.charAt(0) || "?";
     };
 
-    const getOfficeName = (officeId: string): string => {
-        const office = offices.find((o) => o._id === officeId);
-        return office?.name || "";
-    };
-
     const filteredOfficers = selectedOffice === "all"
         ? officers
         : officers.filter((officer) => officer.offices?.includes(selectedOffice));
@@ -166,7 +160,7 @@ export function EditMeetingForm({ meeting }: EditMeetingFormProps) {
             location: meeting.location || "",
             organizer: meeting.organizer || "",
             expectedAttendees: meeting.expectedAttendees || [],
-            status: meeting.status || "scheduled",
+            status: (meeting.status?.toLowerCase() || "scheduled") as "scheduled" | "ongoing" | "completed" | "cancelled",
         },
     });
 
@@ -404,8 +398,9 @@ export function EditMeetingForm({ meeting }: EditMeetingFormProps) {
                                     filteredOfficers.map((officer) => (
                                         <label key={officer._id} className={cn("flex cursor-pointer items-center gap-3 rounded-lg p-2.5 transition-colors", field.value?.includes(officer._id) ? "bg-primary/10" : "hover:bg-card")}>
                                             <Checkbox checked={field.value?.includes(officer._id)} onCheckedChange={(checked) => {
-                                                const vals = new Set(field.value || []);
-                                                checked ? vals.add(officer._id) : vals.delete(officer._id);
+                                                                const vals = new Set(field.value || []);
+                                                if (checked) vals.add(officer._id);
+                                                else vals.delete(officer._id);
                                                 field.onChange(Array.from(vals));
                                             }} />
                                             <div className="flex size-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">{getInitials(officer)}</div>

@@ -35,7 +35,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  IOfficer,
   getOfficerFullName,
   getOfficerInitials,
   getPositionBadgeClasses,
