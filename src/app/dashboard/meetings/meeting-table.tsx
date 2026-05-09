@@ -14,7 +14,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMeetings } from "@/hooks/meetings/queries/useMeetings";
-import { IMeeting, MeetingStatus } from "@/app/types/meetings";
+import { IMeeting } from "@/app/types/meetings";
 import { officerService } from "@/app/services/officer";
 import { meetingService } from "@/app/services/meetings";
 import { Button } from "@/components/ui/button";

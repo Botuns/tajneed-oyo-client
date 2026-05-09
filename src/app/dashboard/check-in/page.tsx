@@ -64,7 +64,7 @@ export default function CheckInPage() {
         page: 1,
         limit: 100,
     });
-    const meetings = meetingsData?.data ?? [];
+    const meetings = React.useMemo(() => meetingsData?.data ?? [], [meetingsData]);
 
     const [selectedMeetingId, setSelectedMeetingId] = React.useState<string>("");
     const [uniqueCode, setUniqueCode] = React.useState("");
