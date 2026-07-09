@@ -1,6 +1,9 @@
 import {
   AttendanceStats,
   IAttendance,
+  ICheckInGuestDto,
+  MeetingAttendanceBreakdown,
+  MeetingStatsBreakdown,
   ThreeMonthAbsence,
 } from "../types/attendance";
 import apiClient from "./api-client";
@@ -47,6 +50,46 @@ export const attendanceService = {
     const response = await apiClient.post<ApiResponse<IAttendance>>(
       "/attendance/checkin/unique-code",
       { meetingId, uniqueCode }
+    );
+    return response.data.data;
+  },
+
+  // Check in a mulk member (an officer with isMulk === true) by unique code.
+  // The backend rejects codes that belong to a non-mulk officer.
+  checkInMulkByCode: async (
+    meetingId: string,
+    uniqueCode: string
+  ): Promise<IAttendance> => {
+    const response = await apiClient.post<ApiResponse<IAttendance>>(
+      "/attendance/checkin/mulk/unique-code",
+      { meetingId, uniqueCode }
+    );
+    return response.data.data;
+  },
+
+  // Walk-in guest check-in. Creates the guest record inline.
+  checkInGuest: async (dto: ICheckInGuestDto): Promise<IAttendance> => {
+    const response = await apiClient.post<ApiResponse<IAttendance>>(
+      "/attendance/checkin/guest",
+      dto
+    );
+    return response.data.data;
+  },
+
+  getMeetingBreakdown: async (
+    meetingId: string
+  ): Promise<MeetingAttendanceBreakdown> => {
+    const response = await apiClient.get<ApiResponse<MeetingAttendanceBreakdown>>(
+      `/attendance/meeting/${meetingId}/breakdown`
+    );
+    return response.data.data;
+  },
+
+  getMeetingStatsBreakdown: async (
+    meetingId: string
+  ): Promise<MeetingStatsBreakdown> => {
+    const response = await apiClient.get<ApiResponse<MeetingStatsBreakdown>>(
+      `/attendance/meeting/${meetingId}/stats/breakdown`
     );
     return response.data.data;
   },

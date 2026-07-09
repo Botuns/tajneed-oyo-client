@@ -19,6 +19,7 @@ import {
 
 import { meetingService } from "@/app/services/meetings";
 import { officerService } from "@/app/services/officer";
+import { AttendanceBreakdown } from "./attendance-breakdown";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -322,6 +323,9 @@ export default function MeetingDetailPage() {
                     )}
                 </div>
             </div>
+
+            {/* Attendance broken down by role (officers, dila qaids, mulk, guests) */}
+            <AttendanceBreakdown meetingId={meetingId} />
         </div>
     );
 }
