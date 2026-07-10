@@ -35,6 +35,10 @@ import {
     IAttendance,
     ICheckInGuestDto,
 } from "@/app/types/attendance";
+import {
+    OFFICER_CODE_PREFIX,
+    normalizeOfficerCode,
+} from "@/app/utils/unique-code";
 
 type CheckInMode = "officer" | "mulk" | "guest";
 
@@ -100,15 +104,14 @@ function CodeCheckInPanel({
     );
 
     const label = variant === "officer" ? "Officer" : "Mulk Member";
-    const placeholder =
-        variant === "officer" ? "e.g., OFC-ABC123" : "e.g., MLK-XYZ123";
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!meetingId || !uniqueCode.trim()) return;
+        const fullCode = normalizeOfficerCode(uniqueCode);
+        if (!meetingId || !fullCode) return;
 
         mutation.mutate(
-            { meetingId, uniqueCode: uniqueCode.trim() },
+            { meetingId, uniqueCode: fullCode },
             {
                 onSuccess: (data) => {
                     setLastCheckIn(data);
@@ -134,7 +137,8 @@ function CodeCheckInPanel({
                     <div>
                         <h3 className="font-semibold text-foreground">Unique Code</h3>
                         <p className="text-xs text-muted-foreground">
-                            Enter {label.toLowerCase()}&apos;s unique code
+                            Type the {label.toLowerCase()}&apos;s number — e.g.{" "}
+                            <span className="font-mono">42</span>
                         </p>
                     </div>
                 </div>
@@ -161,16 +165,30 @@ function CodeCheckInPanel({
                         </Button>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <Input
-                            type="text"
-                            placeholder={`Enter unique code (${placeholder})`}
-                            value={uniqueCode}
-                            onChange={(e) => setUniqueCode(e.target.value.toUpperCase())}
-                            className="h-12 text-center text-lg font-mono tracking-widest"
-                            disabled={disabled || mutation.isPending}
-                            autoFocus
-                        />
+                    <form onSubmit={handleSubmit} className="space-y-3">
+                        <div
+                            className={cn(
+                                "flex h-12 items-center overflow-hidden rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring",
+                                (disabled || mutation.isPending) && "opacity-50"
+                            )}
+                        >
+                            <span className="select-none border-r border-input bg-muted px-3 font-mono text-lg leading-[3rem] tracking-widest text-muted-foreground">
+                                {OFFICER_CODE_PREFIX}
+                            </span>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="42"
+                                value={uniqueCode}
+                                onChange={(e) => setUniqueCode(e.target.value.toUpperCase())}
+                                className="h-full flex-1 bg-transparent px-3 text-lg font-mono tracking-widest text-foreground outline-none placeholder:text-muted-foreground/60 disabled:cursor-not-allowed"
+                                disabled={disabled || mutation.isPending}
+                                autoFocus
+                            />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Just the number is enough. You can also paste a full code.
+                        </p>
                         <Button
                             type="submit"
                             className="w-full"
