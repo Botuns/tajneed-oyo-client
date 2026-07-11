@@ -12,14 +12,13 @@ import {
     MapPin,
     Trash2,
     User,
-    Users,
-    CheckCircle,
     AlertCircle,
 } from "lucide-react";
 
 import { meetingService } from "@/app/services/meetings";
 import { officerService } from "@/app/services/officer";
 import { AttendanceBreakdown } from "./attendance-breakdown";
+import { AttendanceRoster } from "./attendance-roster";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -102,21 +101,6 @@ export default function MeetingDetailPage() {
             return (officer as { name?: string }).name || officer.email || id;
         }
         return id.length > 12 ? `${id.slice(0, 8)}...` : id;
-    };
-
-    const getOfficerEmail = (id: string) => {
-        const officer = officers.find((o) => o._id === id);
-        return officer?.email || "";
-    };
-
-    const getInitials = (id: string) => {
-        const officer = officers.find((o) => o._id === id);
-        if (officer) {
-            const firstName = (officer as { firstName?: string }).firstName;
-            const lastName = (officer as { lastName?: string }).lastName;
-            if (firstName && lastName) return `${firstName.charAt(0)}${lastName.charAt(0)}`;
-        }
-        return "?";
     };
 
     if (isLoading) {
@@ -250,79 +234,8 @@ export default function MeetingDetailPage() {
                 />
             </div>
 
-            {/* Attendance Overview */}
-            <div className="rounded-xl border border-border bg-card">
-                <div className="flex items-center justify-between border-b border-border p-5">
-                    <div className="flex items-center gap-3">
-                        <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
-                            <Users className="size-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                            <h3 className="text-sm font-semibold">Attendance</h3>
-                            <p className="text-xs text-muted-foreground">
-                                {meeting.totalCheckedIn || 0} of {meeting.expectedAttendees?.length || 0} checked in
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="divide-y divide-border">
-                    {meeting.expectedAttendees && meeting.expectedAttendees.length > 0 ? (
-                        meeting.expectedAttendees.map((attendeeId: string) => {
-                            const checkedIn = meeting.checkedInOfficers?.find(
-                                (o) => o.id === attendeeId
-                            );
-                            return (
-                                <div
-                                    key={attendeeId}
-                                    className="flex items-center justify-between p-4"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={cn(
-                                                "flex size-9 items-center justify-center rounded-full text-xs font-medium",
-                                                checkedIn
-                                                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                                    : "bg-primary/10 text-primary"
-                                            )}
-                                        >
-                                            {checkedIn ? (
-                                                <CheckCircle className="size-4" />
-                                            ) : (
-                                                getInitials(attendeeId)
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {checkedIn?.name || getOfficerName(attendeeId)}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {checkedIn?.email || getOfficerEmail(attendeeId)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {checkedIn ? (
-                                            <span className="flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-xs text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                                                <CheckCircle className="size-3" />
-                                                Checked In
-                                            </span>
-                                        ) : (
-                                            <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground">
-                                                <AlertCircle className="size-3" />
-                                                Pending
-                                            </span>
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })
-                    ) : (
-                        <div className="p-8 text-center text-sm text-muted-foreground">
-                            No attendees assigned to this meeting
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Attendance roster: insights, checked-in / pending tabs, search, CSV export */}
+            <AttendanceRoster meeting={meeting} officers={officers} />
 
             {/* Attendance broken down by role (officers, dila qaids, mulk, guests) */}
             <AttendanceBreakdown meetingId={meetingId} />
