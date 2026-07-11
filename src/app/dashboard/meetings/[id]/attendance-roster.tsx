@@ -5,7 +5,10 @@ import { format } from "date-fns";
 import {
     AlertCircle,
     CheckCircle,
+    ChevronDown,
     Download,
+    FileSpreadsheet,
+    FileText,
     Search,
     Users,
 } from "lucide-react";
@@ -14,6 +17,12 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { officeService } from "@/app/services/office";
 import { IMeeting } from "@/app/types/meetings";
 import { IOfficer } from "@/app/types/officer";
@@ -23,6 +32,10 @@ import {
 } from "@/app/types/attendance";
 import { useMeetingBreakdown } from "@/hooks/attendance/queries/useMeetingBreakdown";
 import { downloadCsv } from "@/app/utils/csv";
+import {
+    AttendancePrintRow,
+    exportAttendancePdf,
+} from "@/app/utils/attendance-pdf";
 
 type TabKey = "all" | "in" | "out";
 
@@ -193,13 +206,19 @@ export function AttendanceRoster({
         });
     }, [rows, tab, query]);
 
-    const handleExport = () => {
-        const scope =
-            tab === "in"
-                ? "checked-in"
-                : tab === "out"
-                    ? "not-checked-in"
-                    : "all";
+    const scope =
+        tab === "in" ? "checked-in" : tab === "out" ? "not-checked-in" : "all";
+    const scopeLabel =
+        tab === "in"
+            ? "Checked-in attendees"
+            : tab === "out"
+                ? "Not checked-in"
+                : "All expected attendees";
+    const safeTitle = (meeting.title || "meeting")
+        .replace(/[^\w-]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+
+    const handleExportCsv = () => {
         const header = [
             "S/N",
             "Name",
@@ -222,10 +241,48 @@ export function AttendanceRoster({
             r.checkedIn ? "Checked In" : "Pending",
             r.checkInTime ? format(new Date(r.checkInTime), "yyyy-MM-dd HH:mm") : "",
         ]);
-        const safeTitle = (meeting.title || "meeting")
-            .replace(/[^\w-]+/g, "-")
-            .replace(/^-+|-+$/g, "");
         downloadCsv(`${safeTitle}-${scope}.csv`, [header, ...body]);
+    };
+
+    const handleExportPdf = () => {
+        const organizer = meeting.organizer
+            ? officerById.get(meeting.organizer)
+            : undefined;
+        const organizerName = organizer
+            ? `${organizer.firstName} ${organizer.lastName}`.trim()
+            : meeting.organizer || "";
+        const date = meeting.date
+            ? format(new Date(meeting.date), "MMMM dd, yyyy")
+            : "";
+        const time = meeting.startTime
+            ? `${format(new Date(meeting.startTime), "h:mm a")}${meeting.endTime
+                ? ` - ${format(new Date(meeting.endTime), "h:mm a")}`
+                : ""
+            }`
+            : "";
+        const rows: AttendancePrintRow[] = filtered.map((r) => ({
+            name: r.name,
+            position: r.position,
+            offices: r.offices,
+            dila: r.dila,
+            uniqueCode: r.uniqueCode,
+            status: r.checkedIn ? "Checked In" : "Pending",
+            checkInTime: r.checkInTime
+                ? format(new Date(r.checkInTime), "h:mm a")
+                : "",
+        }));
+        exportAttendancePdf({
+            title: meeting.title || "Meeting",
+            scopeLabel,
+            date,
+            time,
+            location: meeting.location || "",
+            organizer: organizerName,
+            checkedInCount,
+            total,
+            rate,
+            rows,
+        });
     };
 
     return (
@@ -243,15 +300,32 @@ export function AttendanceRoster({
                         </p>
                     </div>
                 </div>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleExport}
-                    disabled={filtered.length === 0}
-                >
-                    <Download className="mr-2 size-4" />
-                    Export{tab !== "all" ? ` (${tabs.find((t) => t.key === tab)?.label})` : ""}
-                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={filtered.length === 0}
+                        >
+                            <Download className="mr-2 size-4" />
+                            Export
+                            {tab !== "all"
+                                ? ` (${tabs.find((t) => t.key === tab)?.label})`
+                                : ""}
+                            <ChevronDown className="ml-1.5 size-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleExportCsv}>
+                            <FileSpreadsheet className="mr-2 size-4" />
+                            Export as CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPdf}>
+                            <FileText className="mr-2 size-4" />
+                            Export as PDF
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
 
             {/* Insight tiles */}
